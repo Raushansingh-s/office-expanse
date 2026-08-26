@@ -1,0 +1,72 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+:root {
+  --sidebar-width: 260px;
+  --topbar-height: 64px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #F0F2F5;
+  color: #1E293B;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #F1F5F9; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+
+/* Status badge colors */
+.badge-draft { background-color: #F1F5F9; color: #64748B; }
+.badge-submitted { background-color: #DBEAFE; color: #1D4ED8; }
+.badge-under_review { background-color: #FEF3C7; color: #D97706; }
+.badge-approved { background-color: #D1FAE5; color: #065F46; }
+.badge-rejected { background-color: #FEE2E2; color: #991B1B; }
+.badge-paid { background-color: #D1FAE5; color: #065F46; }
+.badge-reimbursement_pending { background-color: #FEF3C7; color: #D97706; }
+.badge-reimbursement_approved { background-color: #DBEAFE; color: #1D4ED8; }
+.badge-reimbursed { background-color: #D1FAE5; color: #065F46; }
+.badge-cancelled { background-color: #F1F5F9; color: #64748B; }
+.badge-correction_requested { background-color: #FEE2E2; color: #991B1B; }
+.badge-pending { background-color: #FEF3C7; color: #D97706; }
+.badge-partially_approved { background-color: #FED7AA; color: #C2410C; }
+
+/* Sidebar transitions */
+.sidebar-enter { transform: translateX(-100%); }
+.sidebar-enter-active { transform: translateX(0); transition: transform 300ms ease; }
+.sidebar-exit { transform: translateX(0); }
+.sidebar-exit-active { transform: translateX(-100%); transition: transform 300ms ease; }
+
+/* Table styles */
+.data-table tbody tr:hover { background-color: #F8FAFC; }
+
+/* Skeleton loader */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #E2E8F0 25%, #F1F5F9 50%, #E2E8F0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+/* Card hover effect */
+.stat-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+
+/* Chart tooltip */
+.recharts-tooltip-wrapper { z-index: 100; }
+
+/* Mobile menu overlay */
+.mobile-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; }

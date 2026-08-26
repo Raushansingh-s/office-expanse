@@ -1,0 +1,257 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id             String   @id @default(uuid())
+  name           String
+  logo           String?
+  address        String?
+  email          String?
+  phone          String?
+  gstNumber      String?
+  panNumber      String?
+  cinNumber      String?
+  website        String?
+  financialYear  String   @default("2026-27")
+  currency       String   @default("INR")
+  currencySymbol String   @default("₹")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  users            User[]
+  departments      Department[]
+  expenseCategories ExpenseCategory[]
+  expenses         Expense[]
+  financialYears   FinancialYear[]
+
+  @@map("companies")
+}
+
+model Role {
+  id          String @id @default(uuid())
+  name        String @unique
+  displayName String
+  permissions String // JSON string of permissions array
+
+  users User[]
+
+  @@map("roles")
+}
+
+model Department {
+  id             String   @id @default(uuid())
+  companyId      String
+  name           String
+  code           String?
+  departmentHead String?
+  status         String   @default("active")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  company  Company  @relation(fields: [companyId], references: [id])
+  users    User[]
+  expenses Expense[]
+
+  @@map("departments")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  companyId   String
+  roleId      String
+  departmentId String?
+  name        String
+  employeeId  String?
+  email       String   @unique
+  mobile      String?
+  password    String
+  joiningDate DateTime?
+  bankDetails String?  // JSON
+  upiId       String?
+  status      String   @default("active")
+  refreshToken String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company    Company    @relation(fields: [companyId], references: [id])
+  role       Role       @relation(fields: [roleId], references: [id])
+  department Department? @relation(fields: [departmentId], references: [id])
+
+  expenses          Expense[]        @relation("ExpenseUser")
+  approvedExpenses  Expense[]        @relation("ApprovedBy")
+  expenseApprovals  ExpenseApproval[]
+  reimbursements    Reimbursement[]  @relation("ReimbursementUser")
+  approvedReimburse Reimbursement[]  @relation("ReimbursementApprover")
+  paidReimburse     Reimbursement[]  @relation("ReimbursementPayer")
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+
+  @@map("users")
+}
+
+model FinancialYear {
+  id        String   @id @default(uuid())
+  companyId String
+  label     String   // e.g. "2026-27"
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@map("financial_years")
+}
+
+model ExpenseCategory {
+  id        String   @id @default(uuid())
+  companyId String
+  name      String
+  icon      String?
+  color     String?
+  isDefault Boolean  @default(false)
+  status    String   @default("active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company  Company   @relation(fields: [companyId], references: [id])
+  expenses Expense[]
+
+  @@map("expense_categories")
+}
+
+model Expense {
+  id                    String   @id @default(uuid())
+  expenseNumber         String   @unique
+  companyId             String
+  userId                String
+  departmentId          String?
+  categoryId            String
+  expenseDate           DateTime
+  description           String
+  amount                Float
+  paymentSource         String   // "company" | "personal"
+  paymentMethod         String   // "cash" | "upi" | "debit_card" | etc.
+  merchantName          String?
+  location              String?
+  billNumber            String?
+  reimbursementRequired Boolean  @default(false)
+  reimbursementAmount   Float?
+  status                String   @default("draft")
+  approvedById          String?
+  approvedAt            DateTime?
+  approvedAmount        Float?
+  rejectionReason       String?
+  notes                 String?
+  isDuplicate           Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  company     Company          @relation(fields: [companyId], references: [id])
+  user        User             @relation("ExpenseUser", fields: [userId], references: [id])
+  department  Department?      @relation(fields: [departmentId], references: [id])
+  category    ExpenseCategory  @relation(fields: [categoryId], references: [id])
+  approvedBy  User?            @relation("ApprovedBy", fields: [approvedById], references: [id])
+
+  receipts      ExpenseReceipt[]
+  approvals     ExpenseApproval[]
+  reimbursement Reimbursement?
+
+  @@map("expenses")
+}
+
+model ExpenseReceipt {
+  id          String   @id @default(uuid())
+  expenseId   String
+  filename    String
+  originalName String
+  mimeType    String
+  size        Int
+  path        String
+  createdAt   DateTime @default(now())
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+
+  @@map("expense_receipts")
+}
+
+model ExpenseApproval {
+  id         String   @id @default(uuid())
+  expenseId  String
+  userId     String
+  action     String   // "submitted" | "under_review" | "approved" | "rejected" | "correction_requested" | "resubmitted"
+  comment    String?
+  amount     Float?
+  createdAt  DateTime @default(now())
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@map("expense_approvals")
+}
+
+model Reimbursement {
+  id                  String   @id @default(uuid())
+  expenseId           String   @unique
+  userId              String
+  requestedAmount     Float
+  approvedAmount      Float?
+  status              String   @default("pending")
+  approvedById        String?
+  approvedAt          DateTime?
+  paidAmount          Float?
+  paidById            String?
+  paymentDate         DateTime?
+  paymentMethod       String?
+  transactionReference String?
+  paymentNotes        String?
+  paymentProof        String?
+  notes               String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  expense    Expense @relation(fields: [expenseId], references: [id])
+  user       User    @relation("ReimbursementUser", fields: [userId], references: [id])
+  approvedBy User?   @relation("ReimbursementApprover", fields: [approvedById], references: [id])
+  paidBy     User?   @relation("ReimbursementPayer", fields: [paidById], references: [id])
+
+  @@map("reimbursements")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  type      String   @default("info")
+  isRead    Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  action     String
+  resource   String
+  resourceId String?
+  oldValue   String?  // JSON
+  newValue   String?  // JSON
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}

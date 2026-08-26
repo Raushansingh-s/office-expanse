@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: office_expanse_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password_change_me
+      POSTGRES_DB: office_expanse
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: office_expanse_backend
+    restart: always
+    environment:
+      PORT: 5000
+      NODE_ENV: production
+      DATABASE_URL: "postgresql://postgres:postgres_password_change_me@postgres:5432/office_expanse?schema=public"
+      JWT_SECRET: "production_super_secret_jwt_key_min_32_characters_long"
+      JWT_REFRESH_SECRET: "production_super_secret_refresh_key_min_32_characters"
+      FRONTEND_URL: "http://localhost"
+      COOKIE_SAME_SITE: "lax"
+      COOKIE_SECURE: "false"
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - backend_uploads:/app/uploads
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: office_expanse_frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  backend_uploads:
